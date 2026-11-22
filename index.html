@@ -40,38 +40,19 @@ function playTone(kind){
  }catch(e){}
 }
 // Özgün, düşük sesli ney/ud esintili fon: harici dosya veya telifli kayıt kullanmaz.
-function ambientNote(freq,plucked=false){
- if(!soundEnabled||!audioCtx||!ambientMaster)return;
- const t=audioCtx.currentTime,osc=audioCtx.createOscillator(),filter=audioCtx.createBiquadFilter(),gain=audioCtx.createGain();
- osc.type=plucked?'triangle':'sine';osc.frequency.setValueAtTime(freq,t);
- filter.type='lowpass';filter.frequency.setValueAtTime(plucked?1050:1450,t);filter.Q.value=.55;
- gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(plucked?.045:.014,t+.10);
- gain.gain.exponentialRampToValueAtTime(.0001,t+(plucked?1.15:2.35));
- osc.connect(filter);filter.connect(gain);gain.connect(ambientMaster);osc.start(t);osc.stop(t+(plucked?1.2:2.4));
-}
-function ambientPhrase(){
- if(!soundEnabled)return;
- const ney=[293.66,349.23,392,440,392,349.23,293.66,261.63];
- ambientNote(ney[ambientStep%ney.length],false);
- if(ambientStep%2===0){const oud=[220,261.63,293.66,349.23];ambientNote(oud[(ambientStep/2)%oud.length],true);}
- ambientStep++;
-}
+const neyAudio = new Audio('./ney.mp3');
+neyAudio.loop = true;
+neyAudio.volume = 0.70;
+
 function startAmbient(){
- if(!soundEnabled||ambientTimer)return;
- try{const ctx=getAudio();if(!ctx)return;
-  ambientMaster=ctx.createGain();ambientMaster.gain.setValueAtTime(.42,ctx.currentTime);ambientMaster.connect(ctx.destination);
-  // Sakin, sabit bir ney tınısı arka planı.
-  const drone=ctx.createOscillator(),droneGain=ctx.createGain(),droneFilter=ctx.createBiquadFilter();
-  drone.type='sine';drone.frequency.value=146.83;droneFilter.type='lowpass';droneFilter.frequency.value=850;
-  droneGain.gain.value=.012;drone.connect(droneFilter);droneFilter.connect(droneGain);droneGain.connect(ambientMaster);drone.start();ambientNodes.push(drone);
-  const harmony=ctx.createOscillator(),hGain=ctx.createGain();harmony.type='triangle';harmony.frequency.value=220;hGain.gain.value=.0035;harmony.connect(hGain);hGain.connect(ambientMaster);harmony.start();ambientNodes.push(harmony);
-  ambientPhrase();ambientTimer=setInterval(ambientPhrase,3000);
- }catch(e){}
+ if(!soundEnabled) return;
+ neyAudio.play().catch(()=>{});
 }
+
 function stopAmbient(){
- if(ambientTimer){clearInterval(ambientTimer);ambientTimer=null;}
- if(audioCtx&&ambientMaster){try{const t=audioCtx.currentTime;ambientMaster.gain.cancelScheduledValues(t);ambientMaster.gain.setTargetAtTime(.0001,t,.08);ambientNodes.forEach(n=>{try{n.stop(t+.35)}catch(e){}});}catch(e){}}
- ambientNodes=[];ambientMaster=null;ambientStep=0;
+ neyAudio.pause();
+ neyAudio.currentTime = 0;
+}
 }
 const data={
 'Kur’an':[
